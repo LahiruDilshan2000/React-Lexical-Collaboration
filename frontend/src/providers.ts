@@ -42,23 +42,23 @@ export function createWebsocketProvider(id: string, doc: Y.Doc): Provider {
     // Prevent aggressive resync that might override local changes
     disableBc: true, // Disable broadcast channel to prevent local conflicts
   });
-  
+
   // Store the provider reference to prevent duplicates
   (window as any)[existingProviderKey] = provider;
-  
+
   // Connect after a delay to prevent rapid reconnection issues
   setTimeout(() => {
     console.log('[WebsocketProvider] Connecting after delay for document:', id);
     provider.connect();
   }, 1000);
-  
+
     // Force the provider to start with a clean state
   console.log('[WebsocketProvider] 🚨 Forcing clean state for document:', id);
 
   // Expose basic connection/sync flags for the EditingGatePlugin
   (window as any).__Y_CONNECTED__ = false;
   (window as any).__Y_SYNCED__ = false;
-  
+
   // Track if we've shown auth error to prevent spam
   let hasShownAuthError = false;
   let consecutiveAuthFailures = 0;
@@ -68,28 +68,28 @@ export function createWebsocketProvider(id: string, doc: Y.Doc): Provider {
   provider.on('status', (event: { status: string }) => {
     (window as any).__Y_CONNECTED__ = event.status === 'connected';
     console.log('[WebsocketProvider] Status changed:', event.status);
-    
+
     // Force fresh sync when connected
     if (event.status === 'connected') {
       console.log('[WebsocketProvider] 🚨 Connected - forcing fresh state for document:', id);
-      
+
       // Prevent stale state by ensuring fresh document
       console.log('[WebsocketProvider] 🧹 Ensuring fresh document state');
       // Don't clear the document here - let the frontend handle fresh creation
-      
+
       // Clear any cached state and force a fresh sync
       setTimeout(() => {
         if (provider.ws && provider.ws.readyState === WebSocket.OPEN) {
           console.log('[WebsocketProvider] WebSocket is open, forcing fresh state sync');
         }
       }, 100);
-      
+
       // Reset auth error flag on successful connection
       hasShownAuthError = false;
       consecutiveAuthFailures = 0;
     }
   });
-  
+
   provider.on('sync', (isSynced: boolean) => {
     (window as any).__Y_SYNCED__ = !!isSynced;
     console.log('[WebsocketProvider] Sync status:', isSynced);
@@ -145,7 +145,7 @@ export function createWebsocketProvider(id: string, doc: Y.Doc): Provider {
     // Only log local updates (not remote ones)
     if (origin && origin.constructor?.name !== 'WebsocketProvider') {
       let globalText = (window as any).__CURRENT_EDITOR_TEXT__ || '';
-      
+
       // Fallback: try to get text directly from editor if global text is empty
       if (!globalText) {
         try {
@@ -157,30 +157,30 @@ export function createWebsocketProvider(id: string, doc: Y.Doc): Provider {
           console.log('[WebsocketProvider] Error getting editor text in Yjs update:', error);
         }
       }
-      
+
       // Prevent sending empty content during initial sync to avoid overwriting existing content
       if (isInitialSync && (!globalText || globalText.trim() === '')) {
         console.log('[WebsocketProvider] ⏭️ Skipping empty content update during initial sync');
         return;
       }
-      
-      console.log('++++++---------------+++++++');
+
+      console.log('=============================');
       console.log('[WebsocketProvider] SENDING UPDATE TO BACKEND');
       console.log('[WebsocketProvider] Local update detected, text:', globalText);
       console.log('[WebsocketProvider] Update size:', update.length, 'bytes');
       console.log('[WebsocketProvider] Origin:', origin?.constructor?.name || 'unknown');
       console.log('[WebsocketProvider] WebSocket state:', provider.ws?.readyState);
       console.log('[WebsocketProvider] Connected:', provider.ws?.readyState === WebSocket.OPEN);
-      console.log('++++++---------------+++++++');
-      
+      console.log('=============================');
+
       // Add the specific log you requested
       console.log('--------------------------------------------');
       console.log('YJS UPDATE - ' + globalText);
       console.log('--------------------------------------------');
-      
+
       // Force setup WebSocket send override when update is detected
       setupWebSocketOverride();
-      
+
       // Add a delay to ensure Yjs document is fully synchronized before sending
       setTimeout(() => {
         console.log('[WebsocketProvider] 🔄 Delayed sync check - ensuring Yjs document is fully updated');
@@ -199,12 +199,12 @@ export function createWebsocketProvider(id: string, doc: Y.Doc): Provider {
   const setupWebSocketOverride = () => {
     console.log('[WebsocketProvider] Attempting to set up WebSocket send override...');
     console.log('[WebsocketProvider] WebSocket state:', provider.ws?.readyState);
-    
+
     if (provider.ws && provider.ws.readyState === WebSocket.OPEN) {
       const originalSend = provider.ws.send;
       provider.ws.send = function(data) {
         const size = typeof data === 'string' ? data.length : (data as any)?.byteLength || 'unknown';
-        
+
         // Get current editor text directly from DOM at the moment of sending
         let currentText = '';
         try {
@@ -214,13 +214,13 @@ export function createWebsocketProvider(id: string, doc: Y.Doc): Provider {
             currentText = editorElement.textContent || '';
             console.log('[WebsocketProvider] Got text from DOM:', currentText);
           }
-          
+
           // Fallback to global variable if DOM is empty
           if (!currentText) {
             currentText = (window as any).__CURRENT_EDITOR_TEXT__ || '';
             console.log('[WebsocketProvider] Got text from global variable:', currentText);
           }
-          
+
           // Final fallback: try to get from Lexical editor instance
           if (!currentText && (window as any).__LEXICAL_EDITOR__) {
             try {
@@ -238,19 +238,19 @@ export function createWebsocketProvider(id: string, doc: Y.Doc): Provider {
         } catch (error) {
           console.log('[WebsocketProvider] Error getting editor text:', error);
         }
-        
+
         // Prevent sending empty content during initial sync
         if (isInitialSync && (!currentText || currentText.trim() === '')) {
           console.log('[WebsocketProvider] ⏭️ Skipping empty content send during initial sync');
           return originalSend.call(this, data);
         }
-        
+
         console.log('--------------------------------------------');
         console.log('send - ' + currentText);
         console.log('--------------------------------------------');
         console.log('[WebsocketProvider] Actually sending data to backend, size:', size);
         console.log('[WebsocketProvider] Text being sent:', currentText);
-        
+
         return originalSend.call(this, data);
       };
       console.log('[WebsocketProvider] ✅ WebSocket send override installed successfully');

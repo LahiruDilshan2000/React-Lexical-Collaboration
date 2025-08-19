@@ -1,0 +1,45 @@
+{
+  "name": "sharenest",
+  "version": "1.0.0",
+  "description": "A powerful real-time collaborative text editor built with React, TypeScript, Lexical, Yjs, and MongoDB",
+  "private": true,
+  "scripts": {
+    "setup": "chmod +x setup.sh && ./setup.sh",
+    "install:all": "npm run install:backend && npm run install:frontend",
+    "install:backend": "cd backend && npm install",
+    "install:frontend": "cd frontend && npm install",
+    "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "build": "npm run build:backend && npm run build:frontend",
+    "build:backend": "cd backend && npm run build",
+    "build:frontend": "cd frontend && npm run build",
+    "start": "cd backend && npm start",
+    "clean": "npm run clean:backend && npm run clean:frontend",
+    "clean:backend": "cd backend && npm run clean",
+    "clean:frontend": "cd frontend && rm -rf dist node_modules"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  },
+  "keywords": [
+    "collaborative",
+    "text-editor",
+    "real-time",
+    "yjs",
+    "lexical",
+    "mongodb",
+    "react",
+    "typescript"
+  ],
+  "author": "Sharenest Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/your-username/sharenest.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-username/sharenest/issues"
+  },
+  "homepage": "https://github.com/your-username/sharenest#readme"
+}
